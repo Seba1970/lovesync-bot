@@ -30,4 +30,6 @@ if __name__ == "__main__":
     app = ApplicationBuilder().token(token).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    app.run_polling()
+    port = int(os.environ.get("PORT", 5000))
+app.run(host="0.0.0.0", port=port)
+
