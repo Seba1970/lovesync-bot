@@ -1,36 +1,46 @@
+# main.py  –  varianta FINALĂ, doar polling
 import os
-from flask import Flask, request
-from telegram import Update, Bot
-from telegram.ext import Dispatcher, CommandHandler, MessageHandler, filters, CallbackContext
+import asyncio
+from telegram import Update, ReplyKeyboardMarkup
+from telegram.ext import (
+    ApplicationBuilder, CommandHandler, MessageHandler,
+    ContextTypes, filters
+)
 
-TOKEN = os.environ.get("BOT_TOKEN")
-bot = Bot(token=TOKEN)
+# ─────────── Handlere ───────────
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    keyboard = [["💬 Caută un partener"],
+                ["❤️ Povestea ta"],
+                ["ℹ️ Ajutor"]]
+    await update.message.reply_text(
+        "👋 Bun venit pe LoveSync România!\nAlege o opțiune:",
+        reply_markup=ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    )
 
-app = Flask(__name__)
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = update.message.text
+    if text == "💬 Caută un partener":
+        await update.message.reply_text("Match-making în curând.")
+    elif text == "❤️ Povestea ta":
+        await update.message.reply_text("Trimite-ne povestea ta și o publicăm anonim.")
+    elif text == "ℹ️ Ajutor":
+        await update.message.reply_text("Suport: @LoveSyncSupport")
+    else:
+        await update.message.reply_text("Alege o opțiune din meniu.")
 
-dispatcher = Dispatcher(bot=bot, update_queue=None, workers=0, use_context=True)
+# ─────────── Main (polling) ───────────
+async def main() -> None:
+    token = os.getenv("BOT_TOKEN")
+    app = ApplicationBuilder().token(token).build()
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-# === Comenzi ===
-def start(update: Update, context: CallbackContext):
-    update.message.reply_text("👋 Bine ai venit pe LoveSync România!")
+    # pornește botul în mod polling (fără port, perfect pentru Background Worker)
+    await app.run_polling()
 
-def mesaj(update: Update, context: CallbackContext):
-    update.message.reply_text("✅ Mesaj primit. Revenim în curând cu funcții active.")
+if __name__ == "__main__":
+    asyncio.run(main())
 
-dispatcher.add_handler(CommandHandler("start", start))
-dispatcher.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, mesaj))
-
-# === Ruta webhook ===
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    update = Update.de_json(request.get_json(force=True), bot)
-    dispatcher.process_update(update)
-    return "OK", 200
-
-# === Pornire pentru Render ===
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
 
 
 
