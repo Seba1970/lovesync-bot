@@ -1,5 +1,8 @@
 import os
 import asyncio
+import nest_asyncio
+nest_asyncio.apply()
+
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, MessageHandler,
