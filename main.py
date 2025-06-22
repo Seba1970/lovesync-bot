@@ -1,4 +1,3 @@
-# main.py  –  varianta FINALĂ, doar polling
 import os
 import asyncio
 from telegram import Update, ReplyKeyboardMarkup
@@ -7,7 +6,6 @@ from telegram.ext import (
     ContextTypes, filters
 )
 
-# ─────────── Handlere ───────────
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [["💬 Caută un partener"],
                 ["❤️ Povestea ta"],
@@ -28,18 +26,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("Alege o opțiune din meniu.")
 
-# ─────────── Main (polling) ───────────
-async def main() -> None:
+async def main():
     token = os.getenv("BOT_TOKEN")
     app = ApplicationBuilder().token(token).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
-    # pornește botul în mod polling (fără port, perfect pentru Background Worker)
     await app.run_polling()
 
 if __name__ == "__main__":
     asyncio.run(main())
+
 
 
 
