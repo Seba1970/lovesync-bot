@@ -1,36 +1,36 @@
 import os
-from telegram import Update, ReplyKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
+from flask import Flask, request
+from telegram import Update, Bot
+from telegram.ext import Dispatcher, CommandHandler, MessageHandler, filters, CallbackContext
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [
-        ["💬 Caută un partener"],
-        ["❤️ Povestea ta"],
-        ["ℹ️ Ajutor"]
-    ]
-    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-    await update.message.reply_text(
-        "👋 Bun venit pe LoveSync România!\nAlege o opțiune din meniu:",
-        reply_markup=reply_markup
-    )
+TOKEN = os.environ.get("BOT_TOKEN")
+bot = Bot(token=TOKEN)
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text
-    if text == "💬 Caută un partener":
-        await update.message.reply_text("Funcția de potrivire este momentan în dezvoltare. Revenim curând!")
-    elif text == "❤️ Povestea ta":
-        await update.message.reply_text("Trimite-ne povestea ta de dragoste! Echipa noastră o va publica anonim, dacă dorești.")
-    elif text == "ℹ️ Ajutor":
-        await update.message.reply_text("Pentru suport, contactează echipa: @LoveSyncSupport")
-    else:
-        await update.message.reply_text("Alege o opțiune din meniu.")
+app = Flask(__name__)
 
-if __name__ == "__main__":
-    token = os.environ.get("BOT_TOKEN")
-    app = ApplicationBuilder().token(token).build()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+dispatcher = Dispatcher(bot=bot, update_queue=None, workers=0, use_context=True)
+
+# === Comenzi ===
+def start(update: Update, context: CallbackContext):
+    update.message.reply_text("👋 Bine ai venit pe LoveSync România!")
+
+def mesaj(update: Update, context: CallbackContext):
+    update.message.reply_text("✅ Mesaj primit. Revenim în curând cu funcții active.")
+
+dispatcher.add_handler(CommandHandler("start", start))
+dispatcher.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, mesaj))
+
+# === Ruta webhook ===
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    update = Update.de_json(request.get_json(force=True), bot)
+    dispatcher.process_update(update)
+    return "OK", 200
+
+# === Pornire pentru Render ===
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
+
 
 
